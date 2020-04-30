@@ -1,0 +1,44 @@
+import concurrent.futures
+import multiprocessing
+import time
+import pandas as pd
+
+def do_something(thing):
+    # time.sleep(0.01)
+    df = pd.read_csv('./csvfile.csv')
+    return len(df)
+    # print(thing**3)
+
+def use_concurrent(input_args):
+    collected_results = []
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        results = [executor.submit(do_something, input_arg) for input_arg in input_args]
+        for f in concurrent.futures.as_completed(results):
+            collected_results.append(f)
+        print(len(collected_results))
+
+def use_multiprocessing(input_args):
+    """Use multiprocessing. This really uses up all 4 cores. 
+    The calculations need to be complex enough. e.g. read a csv of 100,000 rows"""
+    processes=[]
+    for input_arg in input_args:
+        p = multiprocessing.Process(target=do_something, args=[input_arg])
+        p.start()
+        processes.append(p)
+
+    for process in processes:
+        process.join()
+
+def use_linear(input_args):
+    for input_arg in input_args:
+        do_something(input_arg)
+
+
+if __name__=='__main__':
+    start = time.perf_counter()
+    input_args = list(range(1000))
+    use_concurrent(input_args)
+    # use_linear(input_args)
+    # use_multiprocessing(input_args)
+    finish = time.perf_counter()
+    print('finished in {:.2f} seconds'.format(finish-start))
